@@ -1,4 +1,4 @@
-use std::{fs::File, str::FromStr, io::{Read, Write}};
+use std::{fs::File, str::FromStr, io::{Read, Write}, process::Command};
 
 use cookie_store::CookieStore;
 use serde::Deserialize;
@@ -13,6 +13,14 @@ struct Config {
     year: Option<i32>,
     day: Option<u8>,
 }
+
+const TEMPLATE: &str = r##"use std::fs;
+
+fn main() {
+    let mut s = fs::read_to_string("input.txt").unwrap();
+}
+"##;
+
 
 fn main() {
     let config_file = File::open(CONFIG_FILE_NAME).expect("Missing config file");
@@ -49,4 +57,12 @@ fn main() {
     let mut v = Vec::new();
     resp.into_reader().read_to_end(&mut v).unwrap();
     f.write(&v).unwrap();
+
+    let output = Command::new("cargo")
+        .args(["init", &path, "--name", &format!("day_{}", day)])
+        .output()
+        .unwrap();
+    let main_path = format!("{}/src/main.rs", path);
+    let mut f = File::create(&main_path).unwrap();
+    write!(f, "{}", TEMPLATE).unwrap();
 }
